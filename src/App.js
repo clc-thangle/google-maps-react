@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { db } from './firebaseConnect';
 import {
   withGoogleMap,
   withScriptjs,
@@ -6,34 +7,46 @@ import {
   Marker,
   InfoWindow
 } from "react-google-maps";
-import * as parkData from "./data/data.json"; //  
+// import * as parkData from "./geo/geo.json"; //  
 import mapStyles from "./mapStyles";
 
 function Map() {
   const [selectedPark, setSelectedPark] = useState(null);
+  const [geo, setGeo] = useState([]);
+
+  // useEffect(() => {
+  //   const listener = e => {
+  //     if (e.key === "Escape") {
+  //       setSelectedPark(null);
+  //     }
+  //   };
+  //   window.addEventListener("keydown", listener);
+
+  //   return () => {
+  //     window.removeEventListener("keydown", listener);
+  //   };
+  // }, []);
 
   useEffect(() => {
-    const listener = e => {
-      if (e.key === "Escape") {
-        setSelectedPark(null);
-      }
-    };
-    window.addEventListener("keydown", listener);
+    let showGeo = [];   
+    db.collection("geo").get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          showGeo.push(doc.data());
+        })
+        setGeo(showGeo)
+      })
+  }, [])
 
-    return () => {
-      window.removeEventListener("keydown", listener);
-    };
-  }, []);
-  
   return (
     <GoogleMap
       defaultZoom={10}
       defaultCenter={{ lat: 16.072783606434253, lng: 108.22042419101558 }}
       defaultOptions={{ styles: mapStyles }}
     >
-      {parkData.data.map(park => (
+      {geo.map(park => (
         <Marker
-          // key={park.properties.PARK_ID}
+          key={park.id}
           position={{
             lat: park.lat,
             lng: park.lon
@@ -76,7 +89,6 @@ function Map() {
 const MapWrapped = withScriptjs(withGoogleMap(Map));
 
 export default function App() {
-  console.log(process.env)
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <MapWrapped
